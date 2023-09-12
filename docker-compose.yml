@@ -1,0 +1,49 @@
+version: "3.6"
+
+services:
+  b2b_db:
+    image: mysql:8.1
+    container_name: b2b_db
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_DATABASE=b2b
+    networks:
+      - b2b-network
+
+  b2b_backend:
+    image: b2b:latest
+    container_name: b2b_backend
+    environment:
+      - C_FORCE_ROOT='true'
+      - PYTHONUNBUFFERED=1
+      - TZ=Europe/Moscow
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_USER=${DB_USER}
+      - DB_NAME=b2b
+      - DB_HOST=b2b_db
+      - DEBUG=${DEBUG}
+    depends_on:
+      - b2b_db
+    networks:
+      - b2b-network
+    volumes:
+      - back_source:/app
+    command: python manage.py runserver 0.0.0.0:8000
+
+volumes:
+  back_source:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: ${SITE_PATH}
+
+networks:
+  b2b-network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: ${NETWORK_ADDRESS}
